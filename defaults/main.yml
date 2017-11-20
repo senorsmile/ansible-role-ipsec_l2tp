@@ -1,0 +1,8 @@
+---
+vpn_name: 'myvpn'
+
+# no defaults (must be defined external to role)
+#vpn_server_ip: 
+#vpn_ipsec_psk:
+#vpn_user:
+#vpn_password:

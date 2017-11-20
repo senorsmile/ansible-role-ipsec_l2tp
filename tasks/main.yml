@@ -1,0 +1,41 @@
+---
+- name: Install apt packages for ipsec/l2tp
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: True
+    cache_valid_time: 86400 # = 1 day
+  with_items:
+    - strongswan
+    - xl2tpd  
+
+- name: ipsec.conf
+  template:
+    src: ipsec.conf.j2
+    dest: /etc/ipsec.conf
+
+- name: ipsec.secrets
+  template:
+    src: ipsec.secrets.j2
+    dest: /etc/ipsec.secrets
+    mode: '0600'
+
+- name: xl2tpd.conf
+  template:
+    src: xl2tpd.conf.j2
+    dest: /etc/xl2tpd/xl2tpd.conf
+  
+- name: options.l2tpd.client
+  template:
+    src: options.l2tpd.client.j2
+    dest: /etc/ppp/options.l2tpd.client
+    mode: '0600'
+
+- name: vpn connect script
+  template:
+    src:  "{{ item }}.sh.j2"
+    dest: "/usr/local/bin/{{ item }}.sh"
+    mode: "0777"
+  with_items:
+    - vpn_connect
+    - vpn_disconnect
