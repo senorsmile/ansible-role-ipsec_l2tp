@@ -28,6 +28,8 @@ local_gw=$(ip route | perl -lane 'print "$1" if /default via (\d+.\d+.\d+.\d+)\s
 # Exclude your VPN server's IP from the new default route
 route add {{ vpn_server_ip }} gw "${local_gw}"
 
+
+## wait for interface to come up
 until ip a | grep ppp0
 do
   sleep 1
@@ -35,13 +37,22 @@ done
 
 echo "*** VPN interface found"
 
+
+{% if vpn_def_route is defined and vpn_def_route %}
+## add default route
+echo "*** Adding default route"
 until route add default dev ppp0
 do
   sleep 1
 done
-
 echo "*** Default route via VPN added"
+{% endif %}
 
-wget -qO- http://ipv4.icanhazip.com; echo
 
 
+{% if vpn_routes is defined %}
+{% for route in vpn_routes %}
+echo "*** Adding route for {{ route }}"
+ip route add "{{ route }}" dev ppp0
+{% endfor %}
+{% endif %}

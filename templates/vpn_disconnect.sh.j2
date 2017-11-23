@@ -5,7 +5,22 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-route del default dev ppp0
+{% if vpn_routes is defined %}
+{% for route in vpn_routes %}
+echo "*** Deleting route for {{ route }}"
+ip route del "{{ route }}" dev ppp0
+{% endfor %}
+{% endif %}
+
+{% if vpn_def_route is defined and vpn_def_route %}
+## del default route
+echo "*** Deleting default route"
+until route del default dev ppp0
+do
+  sleep 1
+done
+echo "*** Default route via VPN deleted"
+{% endif %}
 
 echo "d {{ vpn_name }}" > /var/run/xl2tpd/l2tp-control
 ipsec down myvpn
