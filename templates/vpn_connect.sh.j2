@@ -6,16 +6,28 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
+# default to 1 (on)
+DEBUG="${DEBUG:-1}"
+
+debug_print() {
+  if [[ $DEBUG -eq 1 ]]; then
+    echo "****** " "$@"
+  fi
+}
+
 
 #-------------------------
 ## connect
 #-------------------------
+debug_print "Starting l2tp"
 mkdir -p /var/run/xl2tpd
 touch /var/run/xl2tpd/l2tp-control
 
+debug_print "Restarting services"
 service strongswan restart
 service xl2tpd restart
 
+debug_print "Bringing ipsec up"
 ipsec up {{ vpn_name }}
 
 echo "c {{ vpn_name }}" > /var/run/xl2tpd/l2tp-control
@@ -26,10 +38,12 @@ echo "c {{ vpn_name }}" > /var/run/xl2tpd/l2tp-control
 local_gw=$(ip route | perl -lane 'print "$1" if /default via (\d+.\d+.\d+.\d+)\s/')
 
 # Exclude your VPN server's IP from the new default route
+debug_print "Force route VPN server IP through local gw"
 route add {{ vpn_server_ip }} gw "${local_gw}"
 
 
 ## wait for interface to come up
+debug_print "Waiting for ppp0 interface to come up"
 until ip a | grep ppp0
 do
   sleep 1
@@ -40,19 +54,21 @@ echo "*** VPN interface found"
 
 {% if vpn_def_route is defined and vpn_def_route %}
 ## add default route
+debug_print "Adding default route for ppp0"
 echo "*** Adding default route"
 until route add default dev ppp0
 do
   sleep 1
 done
-echo "*** Default route via VPN added"
+debug_print "Default route via VPN added"
+sleep 2
 {% endif %}
 
 
 
 {% if vpn_routes is defined %}
 {% for route in vpn_routes %}
-echo "*** Adding route for {{ route }}"
+debug_print "Adding route for {{ route }}"
 ip route add "{{ route }}" dev ppp0
 {% endfor %}
 {% endif %}
