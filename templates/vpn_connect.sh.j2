@@ -69,6 +69,11 @@ sleep 2
 {% if vpn_routes is defined %}
 {% for route in vpn_routes %}
 debug_print "Adding route for {{ route }}"
-ip route add "{{ route }}" dev ppp0
+until ip route add "{{ route }}" dev ppp0
+do
+  sleep 1
+done
+debug_print "Route for {{ route }} successfully added."
+
 {% endfor %}
 {% endif %}
